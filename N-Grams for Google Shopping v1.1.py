@@ -84,13 +84,11 @@ def generate_ngrams(list_of_terms, n):
     Turns our list of product titles into a set of unique n-grams that appear within
     """                             
     unique_ngrams = set()
-      
+
     for term in list_of_terms:
         grams = ngrams(term.split(" "), n)
         [unique_ngrams.add(gram) for gram in grams if ' ' not in gram]
-    ngrams_list = set([' '.join(tups) for tups in unique_ngrams])
-    
-    return ngrams_list
+    return {' '.join(tups) for tups in unique_ngrams}
 
 
 # In[6]:
@@ -100,17 +98,18 @@ def _collect_stats(term):
     
     #Slice the dataframe to the terms at hand
     sliced_df = df[df[title_column_name].str.match(fr'.*{re.escape(term)}.*')]
-        
-    #add our metrics
-    raw_data = [len(sliced_df),                                           #number of products
-                np.sum(sliced_df[impressions_column_name]),               #total impressions
-                np.sum(sliced_df["Clicks"]),                              #total clicks
-                np.mean(sliced_df[impressions_column_name]),              #average number of impressions
-                np.mean(sliced_df["Clicks"]),                             #average number of clicks
-                np.median(sliced_df[impressions_column_name]),            #median impressions
-                np.std(sliced_df[impressions_column_name])]               #standard deviation 
-    
-    return raw_data
+
+    return [
+        len(sliced_df),  # number of products
+        np.sum(sliced_df[impressions_column_name]),  # total impressions
+        np.sum(sliced_df["Clicks"]),  # total clicks
+        np.mean(
+            sliced_df[impressions_column_name]
+        ),  # average number of impressions
+        np.mean(sliced_df["Clicks"]),  # average number of clicks
+        np.median(sliced_df[impressions_column_name]),  # median impressions
+        np.std(sliced_df[impressions_column_name]),
+    ]
 
 
 # In[7]:
@@ -176,11 +175,11 @@ for n in grams_to_run:
     print(f"Found {len(n_grams)} n_grams, building stats (may take some time)")
     n_gram_df = build_ngrams_df(df,"Product Title", n_grams, character_limit)
     print("Adding to file")
-    
+
     n_gram_df.to_excel(writer, sheet_name=f'{n}-Gram',)
 
 time_taken = time.time() - start_time
-print("Took "+str(time_taken) + " Seconds")
+print(f"Took {str(time_taken)} Seconds")
 writer.close()
 
 

@@ -120,15 +120,15 @@ def generate_ngrams(list_of_terms, n):
         #split into grams
                     
     unique_ngrams = set()
-      
+
     for term in list_of_terms:
         grams = ngrams(term.split(" "), n)
         [unique_ngrams.add(gram) for gram in grams]
-    all_grams = set([' '.join(tups) for tups in unique_ngrams])
-    
+    all_grams = {' '.join(tups) for tups in unique_ngrams}
+
     if character_limit > 0:
         n_grams_list = [ngram for ngram in all_grams if len(ngram) > character_limit]
-    
+
     return n_grams_list
         
 
@@ -146,11 +146,20 @@ def _collect_stats(term):
     
     #Slice the dataframe to the terms at hand
     sliced_df = df[df["Search term"].str.match(fr'.*{re.escape(term)}.*')]
-        
-    #add our metrics
-    raw_data = list(np.sum(sliced_df[[impressions_column_name,"Clicks","Cost","Conversions","Conv. value"]]))
-    
-    return raw_data
+
+    return list(
+        np.sum(
+            sliced_df[
+                [
+                    impressions_column_name,
+                    "Clicks",
+                    "Cost",
+                    "Conversions",
+                    "Conv. value",
+                ]
+            ]
+        )
+    )
 
 
 # In[18]:
@@ -159,19 +168,19 @@ def _collect_stats(term):
 def _generate_metrics(df):
     #generate metrics
     try:
-        df["CTR"] = df["Clicks"]/df[f"Impressions"]
+        df["CTR"] = df["Clicks"] / df["Impressions"]
         df["CVR"] = df["Conversions"]/df["Clicks"]
         df["CPC"] = df["Cost"]/df["Clicks"]
-        df["ROAS"] = df[f"Conv. value"]/df["Cost"]
+        df["ROAS"] = df["Conv. value"] / df["Cost"]
         df["CPA"] = df["Cost"]/df["Conversions"]
     except KeyError:
         print("Couldn't find a column")
-    
+
     #replace infinites with NaN and replace with 0
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
     df.fillna(0, inplace= True)
     df.round(2)
-    
+
     return df
 
 
@@ -230,10 +239,10 @@ def find_brand_terms(df, brand_terms = brand_terms):
     st_brand_bool = []
     for i, row in df.iterrows():
         term = row["Search term"]
-        
+
         #runs through the term and if any of our brand strings appear, labels the column brand
-        
-        if any([brand_term in term for brand_term in brand_terms]):
+
+        if any(brand_term in term for brand_term in brand_terms):
             st_brand_bool.append("Brand")
         else:
             st_brand_bool.append("Generic")
